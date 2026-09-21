@@ -1,0 +1,11 @@
+# Approach & Key Decisions — DataLens AI
+
+I scoped the problem around one principle: **use the LLM for interpretation, not arithmetic**. Uploaded CSV/Excel sheets are loaded into an in-memory DuckDB session. The open-source LLM receives table/column metadata and translates a natural-language analytical question into a single read-only SQL query. DuckDB executes the query deterministically; the LLM then summarizes only the resulting rows. This keeps the prototype small while making answers inspectable and substantially less dependent on model-generated calculations.
+
+Multi-file analysis is enabled by registering each uploaded file (and each Excel sheet) as a table. A lightweight profiling layer captures row counts, types and nulls. On top of this I added heuristic relationship discovery: tables with shared column names are tested for value overlap and surfaced as likely joins. The relationships are supplied to the LLM but are not silently treated as guaranteed truth.
+
+The main **delta on top of AI** is the reliability and transparency layer. Generated SQL is parsed and restricted to read-only analytical statements before execution. If execution fails, the model receives the database error and gets one bounded repair attempt rather than entering an uncontrolled retry loop. Users can inspect the generated SQL, result table and detected relationships. Charts are derived from query results rather than fabricated by the model.
+
+I deliberately chose Streamlit, DuckDB, Pandas, Plotly and Ollama because the assignment calls for a small working prototype. I avoided authentication, persistent databases, multi-agent orchestration and complex cloud infrastructure because they would add surface area without improving the core evaluation: whether a user can upload heterogeneous tabular data and reliably ask useful analytical questions.
+
+With more time, I would add semantic relationship detection across differently named keys, explicit user confirmation for ambiguous joins, query/result verification and an evaluation suite, stronger date/currency normalization, larger-file ingestion, persistent conversational context, row/column-level permissions, observability, and a production deployment path with sandboxed execution and resource limits.
